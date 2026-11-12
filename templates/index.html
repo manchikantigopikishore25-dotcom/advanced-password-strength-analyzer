@@ -1,0 +1,563 @@
+{% extends "base.html" %}
+
+{% block title %}Advanced Password Strength Analyzer & Security System{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+
+    <!-- Hero Title Banner -->
+    <section class="hero-banner">
+        <div class="hero-badge">
+            <span class="badge-icon">🛡️</span> Local Cyber Defense Utility
+        </div>
+        <h1 class="hero-title">Advanced Password Strength Analyzer</h1>
+        <p class="hero-subtitle">
+            Analyze password strength locally and improve your password security. Evaluates entropy, dictionary patterns, keyboard walks, and crack resistance without ever storing credentials.
+        </p>
+    </section>
+
+    <!-- SECTION 1: Password Input & Analysis Controls -->
+    <section id="analyzer-section" class="card analyzer-card">
+        <div class="card-header">
+            <div class="header-title-group">
+                <span class="card-step">01</span>
+                <div>
+                    <h2 class="card-heading">Password Analyzer</h2>
+                    <p class="card-subheading">Enter a password or passphrase to perform in-memory cryptographic analysis.</p>
+                </div>
+            </div>
+            <div class="privacy-guarantee-tag">
+                <span class="shield-dot"></span> In-Memory Processing Only
+            </div>
+        </div>
+
+        <div class="card-body">
+            <div class="password-input-wrapper">
+                <div class="input-field-container">
+                    <input 
+                        type="password" 
+                        id="password-input" 
+                        class="password-field" 
+                        placeholder="Type or paste a password to inspect..." 
+                        autocomplete="off" 
+                        spellcheck="false" 
+                        maxlength="{{ max_pwd_len }}"
+                        aria-label="Password to analyze"
+                    >
+                    <button 
+                        type="button" 
+                        id="toggle-visibility-btn" 
+                        class="btn-icon" 
+                        title="Show or hide password text"
+                        aria-label="Toggle password visibility"
+                    >
+                        <svg id="eye-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="input-actions-row">
+                    <div class="char-count-wrapper">
+                        <span id="char-counter" class="char-counter">0</span> / {{ max_pwd_len }} characters
+                    </div>
+                    <div class="btn-group">
+                        <button type="button" id="clear-btn" class="btn btn-secondary">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                            Clear
+                        </button>
+                        <button type="button" id="analyze-btn" class="btn btn-primary">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                            </svg>
+                            Analyze Password
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Real-time Quick Security Alert Box -->
+            <div id="quick-alert-box" class="alert-box alert-hidden" role="alert"></div>
+        </div>
+    </section>
+
+    <!-- SECTION 2: Strength Score & Visual Meter -->
+    <section id="score-section" class="card score-card">
+        <div class="card-header">
+            <div class="header-title-group">
+                <span class="card-step">02</span>
+                <div>
+                    <h2 class="card-heading">Strength Score & Classification</h2>
+                    <p class="card-subheading">Overall rating calculated from character diversity, entropy, and structural resistance.</p>
+                </div>
+            </div>
+            <div id="strength-badge" class="strength-badge badge-neutral">Awaiting Input</div>
+        </div>
+
+        <div class="card-body">
+            <div class="score-display-grid">
+                <div class="score-radial-wrapper">
+                    <div class="score-number-display">
+                        <span id="score-value" class="score-digits">0</span>
+                        <span class="score-max">/100</span>
+                    </div>
+                    <span id="score-caption" class="score-caption">Security Score</span>
+                </div>
+
+                <div class="meter-and-summary">
+                    <!-- Segmented Visual Strength Meter -->
+                    <div class="meter-track" aria-label="Password strength meter" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                        <div id="meter-segment-1" class="meter-segment" title="Very Weak (0-19)"></div>
+                        <div id="meter-segment-2" class="meter-segment" title="Weak (20-39)"></div>
+                        <div id="meter-segment-3" class="meter-segment" title="Moderate (40-59)"></div>
+                        <div id="meter-segment-4" class="meter-segment" title="Strong (60-79)"></div>
+                        <div id="meter-segment-5" class="meter-segment" title="Very Strong (80-100)"></div>
+                    </div>
+                    <div class="meter-labels">
+                        <span>Very Weak</span>
+                        <span>Weak</span>
+                        <span>Moderate</span>
+                        <span>Strong</span>
+                        <span>Very Strong</span>
+                    </div>
+
+                    <!-- Explanations Box -->
+                    <div class="score-explanation-box">
+                        <h4 class="explanation-title">Score Breakdown & Rationale:</h4>
+                        <ul id="score-reasons-list" class="reasons-list">
+                            <li class="reason-placeholder">Enter a password above to view detailed score rationale and deductions.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 3: Password Characteristics & Crack Resistance -->
+    <section id="characteristics-section" class="card characteristics-card">
+        <div class="card-header">
+            <div class="header-title-group">
+                <span class="card-step">03</span>
+                <div>
+                    <h2 class="card-heading">Security Characteristics & Metrics</h2>
+                    <p class="card-subheading">Granular inspection of character sets, information entropy, and pattern recognition.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <!-- Characteristic Badges Grid -->
+            <div class="characteristics-grid">
+                <div id="metric-length" class="metric-chip">
+                    <span class="metric-label">Length</span>
+                    <span id="val-length" class="metric-value">0 chars</span>
+                </div>
+                <div id="metric-upper" class="metric-chip">
+                    <span class="metric-label">Uppercase (A-Z)</span>
+                    <span id="val-upper" class="metric-value">None</span>
+                </div>
+                <div id="metric-lower" class="metric-chip">
+                    <span class="metric-label">Lowercase (a-z)</span>
+                    <span id="val-lower" class="metric-value">None</span>
+                </div>
+                <div id="metric-digits" class="metric-chip">
+                    <span class="metric-label">Numbers (0-9)</span>
+                    <span id="val-digits" class="metric-value">None</span>
+                </div>
+                <div id="metric-symbols" class="metric-chip">
+                    <span class="metric-label">Special Characters</span>
+                    <span id="val-symbols" class="metric-value">None</span>
+                </div>
+                <div id="metric-entropy" class="metric-chip" title="Shannon information entropy based on character pool cardinality">
+                    <span class="metric-label">Theoretical Entropy</span>
+                    <span id="val-entropy" class="metric-value">0.0 bits</span>
+                </div>
+                <div id="metric-eff-entropy" class="metric-chip" title="Entropy minus repetition and pattern vulnerability penalties">
+                    <span class="metric-label">Effective Entropy</span>
+                    <span id="val-eff-entropy" class="metric-value">0.0 bits</span>
+                </div>
+                <div id="metric-blocklist" class="metric-chip">
+                    <span class="metric-label">Common Blocklist</span>
+                    <span id="val-blocklist" class="metric-value">Not checked</span>
+                </div>
+                <div id="metric-repeats" class="metric-chip">
+                    <span class="metric-label">Repetition Pattern</span>
+                    <span id="val-repeats" class="metric-value">None</span>
+                </div>
+                <div id="metric-sequences" class="metric-chip">
+                    <span class="metric-label">Sequential Runs</span>
+                    <span id="val-sequences" class="metric-value">None</span>
+                </div>
+                <div id="metric-keyboard" class="metric-chip">
+                    <span class="metric-label">Keyboard Walks</span>
+                    <span id="val-keyboard" class="metric-value">None</span>
+                </div>
+                <div id="metric-dictionary" class="metric-chip">
+                    <span class="metric-label">Dictionary Words</span>
+                    <span id="val-dictionary" class="metric-value">None</span>
+                </div>
+            </div>
+
+            <!-- Crack-Time Resistance Scenarios -->
+            <div class="crack-time-container">
+                <h3 class="subsection-title">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                    Estimated Resistance Against Guessing & Cracking Attacks
+                </h3>
+                <p class="subsection-desc">Calculated across different adversary capabilities, from rate-limited online forms to modern GPU clusters.</p>
+
+                <div class="crack-scenarios-grid">
+                    <div class="scenario-card">
+                        <div class="scenario-header">
+                            <span class="scenario-icon">🛡️</span>
+                            <div>
+                                <h4 class="scenario-name">Online Throttled Attack</h4>
+                                <span class="scenario-rate">100 attempts / hour (Rate-limited API)</span>
+                            </div>
+                        </div>
+                        <div id="crack-online-throttled" class="scenario-time">—</div>
+                    </div>
+
+                    <div class="scenario-card">
+                        <div class="scenario-header">
+                            <span class="scenario-icon">🌐</span>
+                            <div>
+                                <h4 class="scenario-name">Online Unthrottled Attack</h4>
+                                <span class="scenario-rate">10 attempts / second (No lockout)</span>
+                            </div>
+                        </div>
+                        <div id="crack-online-unthrottled" class="scenario-time">—</div>
+                    </div>
+
+                    <div class="scenario-card">
+                        <div class="scenario-header">
+                            <span class="scenario-icon">🔒</span>
+                            <div>
+                                <h4 class="scenario-name">Offline Slow Hash Attack</h4>
+                                <span class="scenario-rate">10,000 / sec (Argon2id / bcrypt KDF)</span>
+                            </div>
+                        </div>
+                        <div id="crack-offline-slow" class="scenario-time">—</div>
+                    </div>
+
+                    <div class="scenario-card highlight-danger">
+                        <div class="scenario-header">
+                            <span class="scenario-icon">⚡</span>
+                            <div>
+                                <h4 class="scenario-name">Offline Fast Hash Attack</h4>
+                                <span class="scenario-rate">100 Billion / sec (GPU Cluster on MD5/NTLM)</span>
+                            </div>
+                        </div>
+                        <div id="crack-offline-fast" class="scenario-time">—</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Optional zxcvbn Telemetry Box -->
+            <div id="zxcvbn-box" class="zxcvbn-container">
+                <div class="zxcvbn-header">
+                    <span class="zxcvbn-title">zxcvbn Defense Telemetry</span>
+                    <span id="zxcvbn-badge" class="badge-pill">zxcvbn Active</span>
+                </div>
+                <div class="zxcvbn-content">
+                    <div class="zx-stat">
+                        <span class="zx-stat-label">zxcvbn Score:</span>
+                        <span id="zx-score-val" class="zx-stat-val">— / 4</span>
+                    </div>
+                    <div class="zx-stat">
+                        <span class="zx-stat-label">Estimated Guesses:</span>
+                        <span id="zx-guesses-val" class="zx-stat-val">—</span>
+                    </div>
+                    <div class="zx-stat">
+                        <span class="zx-stat-label">Pattern Feedback:</span>
+                        <span id="zx-warning-val" class="zx-stat-val">None</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 4: Security Recommendations -->
+    <section id="recommendations-section" class="card recommendations-card">
+        <div class="card-header">
+            <div class="header-title-group">
+                <span class="card-step">04</span>
+                <div>
+                    <h2 class="card-heading">Actionable Security Recommendations</h2>
+                    <p class="card-subheading">Specific steps to strengthen your credentials according to NIST SP 800-63B standards.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <!-- Categorized Detailed Findings -->
+            <div id="detailed-findings-list" class="findings-container"></div>
+
+            <!-- Bulleted Concrete Recommendations -->
+            <div class="recs-checklist-wrapper">
+                <h4 class="recs-subtitle">Concrete Improvement Checklist:</h4>
+                <ul id="recommendations-list" class="recommendations-list">
+                    <li class="rec-item-placeholder">Analysis recommendations will appear here automatically.</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 5: Secure Password & Passphrase Generator -->
+    <section id="generator-section" class="card generator-card">
+        <div class="card-header">
+            <div class="header-title-group">
+                <span class="card-step">05</span>
+                <div>
+                    <h2 class="card-heading">Cryptographically Secure Password Generator</h2>
+                    <p class="card-subheading">Generate high-entropy random passwords or NIST-endorsed multi-word passphrases using Python's <code>secrets</code> CSPRNG.</p>
+                </div>
+            </div>
+            <div class="mode-tabs">
+                <button type="button" id="tab-mode-random" class="tab-btn active">Random Password</button>
+                <button type="button" id="tab-mode-passphrase" class="tab-btn">Diceware Passphrase</button>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <!-- Generated Password Output Box -->
+            <div class="generated-output-wrapper">
+                <div class="generated-display-field">
+                    <span id="generated-password-text" class="generated-text">Click "Generate Password" below</span>
+                </div>
+                <div class="generated-actions">
+                    <button type="button" id="copy-btn" class="btn btn-secondary" title="Copy to clipboard">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                        Copy
+                    </button>
+                    <button type="button" id="test-generated-btn" class="btn btn-accent" title="Send generated password into the analyzer">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M5 12h14"></path>
+                            <path d="M12 5l7 7-7 7"></path>
+                        </svg>
+                        Inspect Strength
+                    </button>
+                </div>
+            </div>
+
+            <!-- Controls Panel: Random Mode -->
+            <div id="controls-random" class="generator-controls-panel">
+                <div class="slider-control-group">
+                    <div class="slider-header">
+                        <label for="length-slider" class="control-label">Password Length:</label>
+                        <span id="slider-length-val" class="slider-val-badge">16 characters</span>
+                    </div>
+                    <input type="range" id="length-slider" min="8" max="64" value="16" class="slider-input">
+                    <div class="slider-ticks">
+                        <span>8</span>
+                        <span>16 (Recommended)</span>
+                        <span>32</span>
+                        <span>64</span>
+                    </div>
+                </div>
+
+                <div class="checkbox-options-grid">
+                    <label class="custom-checkbox">
+                        <input type="checkbox" id="chk-upper" checked>
+                        <span class="checkmark"></span>
+                        <span class="checkbox-text">Uppercase Letters (A-Z)</span>
+                    </label>
+                    <label class="custom-checkbox">
+                        <input type="checkbox" id="chk-lower" checked>
+                        <span class="checkmark"></span>
+                        <span class="checkbox-text">Lowercase Letters (a-z)</span>
+                    </label>
+                    <label class="custom-checkbox">
+                        <input type="checkbox" id="chk-digits" checked>
+                        <span class="checkmark"></span>
+                        <span class="checkbox-text">Numbers (0-9)</span>
+                    </label>
+                    <label class="custom-checkbox">
+                        <input type="checkbox" id="chk-symbols" checked>
+                        <span class="checkmark"></span>
+                        <span class="checkbox-text">Special Symbols (!@#$%)</span>
+                    </label>
+                    <label class="custom-checkbox">
+                        <input type="checkbox" id="chk-ambiguous">
+                        <span class="checkmark"></span>
+                        <span class="checkbox-text">Avoid Ambiguous Characters (O, 0, l, 1, I)</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Controls Panel: Passphrase Mode -->
+            <div id="controls-passphrase" class="generator-controls-panel panel-hidden">
+                <div class="slider-control-group">
+                    <div class="slider-header">
+                        <label for="words-slider" class="control-label">Number of Words:</label>
+                        <span id="slider-words-val" class="slider-val-badge">4 words</span>
+                    </div>
+                    <input type="range" id="words-slider" min="3" max="7" value="4" class="slider-input">
+                </div>
+
+                <div class="checkbox-options-grid">
+                    <div class="select-group">
+                        <label for="passphrase-sep" class="control-label">Word Separator:</label>
+                        <select id="passphrase-sep" class="custom-select">
+                            <option value="-">Hyphen (-)</option>
+                            <option value="_">Underscore (_)</option>
+                            <option value=" ">Space ( )</option>
+                            <option value=".">Period (.)</option>
+                        </select>
+                    </div>
+                    <label class="custom-checkbox">
+                        <input type="checkbox" id="chk-pass-capitalize">
+                        <span class="checkmark"></span>
+                        <span class="checkbox-text">Capitalize First Letters</span>
+                    </label>
+                    <label class="custom-checkbox">
+                        <input type="checkbox" id="chk-pass-number" checked>
+                        <span class="checkmark"></span>
+                        <span class="checkbox-text">Include Random 2-Digit Number</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Generator Action Button -->
+            <div class="generator-submit-row">
+                <button type="button" id="generate-submit-btn" class="btn btn-primary btn-large">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+                    </svg>
+                    Generate New Password
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 6: Educational Cybersecurity Guide & Core Concepts -->
+    <section id="security-tips" class="card educational-card">
+        <div class="card-header">
+            <div class="header-title-group">
+                <span class="card-step">06</span>
+                <div>
+                    <h2 class="card-heading">Cybersecurity Educational Guide</h2>
+                    <p class="card-subheading">Key cryptographic concepts, attack vectors, and NIST SP 800-63B standards explained.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <div class="concepts-grid">
+                <div class="concept-card">
+                    <div class="concept-icon">🧮</div>
+                    <h3 class="concept-title">Password Entropy</h3>
+                    <p class="concept-text">
+                        Entropy measures the theoretical unpredictability of a password in bits. Calculated via <code>H = L × log₂(R)</code>, where <code>L</code> is length and <code>R</code> is character pool size. Every extra bit doubles the search combinations required for brute-force cracking.
+                    </p>
+                </div>
+
+                <div class="concept-card">
+                    <div class="concept-icon">⚔️</div>
+                    <h3 class="concept-title">Brute-Force vs. Dictionary</h3>
+                    <p class="concept-text">
+                        <strong>Brute-Force</strong> systematically traverses every possible permutation in a character set. <strong>Dictionary Attacks</strong> test pre-compiled lists of billions of breached words combined with permutation rules (mangling).
+                    </p>
+                </div>
+
+                <div class="concept-card">
+                    <div class="concept-icon">🔁</div>
+                    <h3 class="concept-title">Credential Stuffing & Reuse</h3>
+                    <p class="concept-text">
+                        When a service suffers a database breach, automated threat bots test those username/password pairs against thousands of other websites. Reusing passwords guarantees multi-platform compromise upon a single leak.
+                    </p>
+                </div>
+
+                <div class="concept-card">
+                    <div class="concept-icon">📜</div>
+                    <h3 class="concept-title">NIST SP 800-63B Guidelines</h3>
+                    <p class="concept-text">
+                        Modern NIST standards discourage arbitrary periodic password expiration and rigid composition rules (which cause predictable substitutions like <code>P@ssw0rd1!</code>). Instead, NIST emphasizes length (16+ chars), multi-word passphrases, and blocklist checking.
+                    </p>
+                </div>
+
+                <div class="concept-card">
+                    <div class="concept-icon">🔐</div>
+                    <h3 class="concept-title">Analysis vs. Storage (Argon2 / bcrypt)</h3>
+                    <p class="concept-text">
+                        <strong>Password Analysis</strong> evaluates credential complexity in transient volatile memory. <strong>Secure Storage</strong> requires one-way, salted, slow cryptographic Key Derivation Functions (KDFs) like <strong>Argon2id</strong> or <strong>bcrypt</strong> to defeat GPU cracking clusters.
+                    </p>
+                </div>
+
+                <div class="concept-card">
+                    <div class="concept-icon">📱</div>
+                    <h3 class="concept-title">MFA & Password Managers</h3>
+                    <p class="concept-text">
+                        A password manager (e.g., Bitwarden, 1Password) produces unique 20+ character passwords for every account. Multi-Factor Authentication (MFA / 2FA via authenticator apps or FIDO2 hardware keys) stops 99.9% of automated account takeovers.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 7: Evaluation Telemetry / Safe History Modal / Section -->
+    <section id="telemetry-section" class="card telemetry-card">
+        <div class="card-header">
+            <div class="header-title-group">
+                <span class="card-step">07</span>
+                <div>
+                    <h2 class="card-heading">Safe Evaluation Telemetry (Zero-Knowledge Audit)</h2>
+                    <p class="card-subheading">Records anonymous metric metadata (timestamps and scores only). Passwords and hashes are strictly excluded.</p>
+                </div>
+            </div>
+            <button type="button" id="clear-history-btn" class="btn btn-secondary btn-sm" title="Purge telemetry records">
+                Clear Telemetry
+            </button>
+        </div>
+
+        <div class="card-body">
+            <div class="stats-overview-row">
+                <div class="stat-box">
+                    <span class="stat-number" id="stats-total">0</span>
+                    <span class="stat-caption">Evaluations Run</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-number" id="stats-avg">0</span>
+                    <span class="stat-caption">Average Score</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-number" id="stats-strong-pct">0%</span>
+                    <span class="stat-caption">Strong / Very Strong</span>
+                </div>
+            </div>
+
+            <div class="telemetry-table-wrapper">
+                <table class="telemetry-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Timestamp (UTC)</th>
+                            <th>Score</th>
+                            <th>Strength Classification</th>
+                            <th>Length</th>
+                            <th>Entropy (Bits)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="telemetry-table-body">
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">No evaluations recorded yet in this session.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+</div>
+{% endblock %}
